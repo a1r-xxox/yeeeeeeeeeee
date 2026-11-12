@@ -1,0 +1,71 @@
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "給你臉了?外掛打開你不就完了",
+   LoadingTitle = "載入主控台中...",
+   LoadingSubtitle = "by Rayfield + 遠端模組架構",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false,
+})
+
+local ControlTab = Window:CreateTab("功能開關", 4483362458)
+
+ControlTab:CreateToggle({
+    Name = "開啟/關閉 [Revenant-ESP]",
+    CurrentValue = false,
+    Flag = "ToggleRevenantESP",
+    Callback = function(Value)
+        if Value then
+            local success, err = pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/a1r-xxox/revenant_Esp/refs/heads/main/tracer.lua"))()
+            end)
+            
+            if success then
+                Rayfield:Notify({Title = "成功", Content = "[Revenant-ESP] 已遠端載入！", Duration = 3})
+            else
+                Rayfield:Notify({Title = "錯誤", Content = "載入失敗：" .. tostring(err), Duration = 4})
+            end
+        else
+            local coreGui = game:GetService("CoreGui")
+            local existingGui = coreGui:FindFirstChild("RevenantESP_V22")
+            if existingGui then existingGui:Destroy() end
+            
+            Rayfield:Notify({Title = "已關閉", Content = "[Revenant-ESP] 介面已清除", Duration = 2})
+        end
+    end,
+})
+
+
+ControlTab:CreateToggle({
+    Name = "開啟/關閉 Ultimate-Fling",
+    CurrentValue = false,
+    Flag = "ToggleUltimateFling",
+    Callback = function(Value)
+        if Value then
+            local success, err = pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/a1r-xxox/Ultimate-Fling/refs/heads/main/Ultimate-Fling"))()
+            end)
+            
+            if success then
+                Rayfield:Notify({Title = "成功", Content = "Ultimate-Fling 已遠端載入！", Duration = 3})
+            else
+                Rayfield:Notify({Title = "錯誤", Content = "載入失敗：" .. tostring(err), Duration = 4})
+            end
+        else
+            local coreGui = game:GetService("CoreGui")
+            local existingGui = coreGui:FindFirstChild("KilasikFlingGUI_Pro")
+            if existingGui then existingGui:Destroy() end
+            
+            Rayfield:Notify({Title = "已關閉", Content = "Ultimate-Fling 介面已清除", Duration = 2})
+        end
+    end,
+})
+
+
+Rayfield:Notify({
+   Title = "主控台就緒",
+   Content = "已成功對接 ESP 與 Fling 遠端模組！",
+   Duration = 4,
+   Image = 4483362458,
+})
