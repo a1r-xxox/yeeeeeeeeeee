@@ -1,4 +1,4 @@
-
+ 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
@@ -27,11 +27,12 @@ ControlTab:CreateToggle({
                 Rayfield:Notify({Title = "錯誤", Content = "載入失敗：" .. tostring(err), Duration = 4})
             end
         else
-            local coreGui = game:GetService("CoreGui")
-            local existingGui = coreGui:FindFirstChild("RevenantESP_V22")
-            if existingGui then existingGui:Destroy() end
+            -- 完美同步：直接呼叫腳本內的清理函數（等同於按下右上角 X）
+            if getgenv().CleanupRevenantESP then
+                getgenv().CleanupRevenantESP()
+            end
             
-            Rayfield:Notify({Title = "已關閉", Content = "[Revenant-ESP] 介面已清除", Duration = 2})
+            Rayfield:Notify({Title = "已關閉", Content = "[Revenant-ESP] 已完全清理", Duration = 2})
         end
     end,
 })
