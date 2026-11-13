@@ -1,17 +1,25 @@
- 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "給你臉了?外掛打開你不就完了",
-   LoadingTitle = "載入主控台中...",
-   LoadingSubtitle = "by Rayfield + 遠端模組架構",
-   ConfigurationSaving = { Enabled = false },
-   KeySystem = false,
+    Name = "給你臉了?外掛打開你不就完了",
+    LoadingTitle = "載入主控台中...",
+    LoadingSubtitle = "by Rayfield + 模組化分頁架構",
+    ConfigurationSaving = { Enabled = false },
+    KeySystem = false,
 })
 
-local ControlTab = Window:CreateTab("功能開關", 4483362458)
+-- 建立分頁 1：遠端腳本
+local ScriptTab = Window:CreateTab("遠端腳本", 4483362458)
 
-ControlTab:CreateToggle({
+-- 建立分頁 2：內置功能
+local UtilityTab = Window:CreateTab("內置功能", 4483362458)
+
+-----------------------------------------------------------------
+-- 【分頁 1：遠端腳本】內容
+-----------------------------------------------------------------
+
+-- 1. Revenant-ESP 模組開關
+ScriptTab:CreateToggle({
     Name = "開啟/關閉 [Revenant-ESP]",
     CurrentValue = false,
     Flag = "ToggleRevenantESP",
@@ -20,25 +28,22 @@ ControlTab:CreateToggle({
             local success, err = pcall(function()
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/a1r-xxox/revenant_Esp/refs/heads/main/tracer.lua"))()
             end)
-            
             if success then
                 Rayfield:Notify({Title = "成功", Content = "[Revenant-ESP] 已遠端載入！", Duration = 3})
             else
                 Rayfield:Notify({Title = "錯誤", Content = "載入失敗：" .. tostring(err), Duration = 4})
             end
         else
-            -- 完美同步：直接呼叫腳本內的清理函數（等同於按下右上角 X）
             if getgenv().CleanupRevenantESP then
                 getgenv().CleanupRevenantESP()
             end
-            
             Rayfield:Notify({Title = "已關閉", Content = "[Revenant-ESP] 已完全清理", Duration = 2})
         end
     end,
 })
 
-
-ControlTab:CreateToggle({
+-- 2. Ultimate-Fling 模組開關
+ScriptTab:CreateToggle({
     Name = "開啟/關閉 Ultimate-Fling",
     CurrentValue = false,
     Flag = "ToggleUltimateFling",
@@ -47,7 +52,6 @@ ControlTab:CreateToggle({
             local success, err = pcall(function()
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/a1r-xxox/Ultimate-Fling/refs/heads/main/Ultimate-Fling"))()
             end)
-            
             if success then
                 Rayfield:Notify({Title = "成功", Content = "Ultimate-Fling 已遠端載入！", Duration = 3})
             else
@@ -57,16 +61,113 @@ ControlTab:CreateToggle({
             local coreGui = game:GetService("CoreGui")
             local existingGui = coreGui:FindFirstChild("KilasikFlingGUI_Pro")
             if existingGui then existingGui:Destroy() end
-            
             Rayfield:Notify({Title = "已關閉", Content = "Ultimate-Fling 介面已清除", Duration = 2})
         end
     end,
 })
 
+-----------------------------------------------------------------
+-- 【分頁 2：內置功能】內容
+-----------------------------------------------------------------
+
+local RunService = game:GetService("RunService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+
+-- 3. 獨立穿牆 (No-Clip) 開關
+local NoClipConnection = nil
+UtilityTab:CreateToggle({
+    Name = "開啟/關閉 穿牆 (No-Clip)",
+    CurrentValue = false,
+    Flag = "ToggleNoClip",
+    Callback = function(Value)
+        if Value then
+            NoClipConnection = RunService.Stepped:Connect(function()
+                local char = LocalPlayer.Character
+                if char then
+                    for _, part in pairs(char:GetDescendants()) do
+                        if part:IsA("BasePart") then part.CanCollide = false end
+                    end
+                end
+            end)
+            Rayfield:Notify({Title = "穿牆開啟", Content = "已忽略所有物理碰撞", Duration = 2})
+        else
+            if NoClipConnection then
+                NoClipConnection:Disconnect()
+                NoClipConnection = nil
+            end
+            Rayfield:Notify({Title = "穿牆關閉", Content = "恢復正常物理碰撞", Duration = 2})
+        end
+    end,
+})
+
+-- 4. 平滑飛行 (Smooth Fly) 開關與速度滑桿
+local FlyConnection = nil
+local FlySpeedValue = 50
+
+UtilityTab:CreateToggle({
+    Name = "開啟/關閉 平滑飛行 (Smooth Fly)",
+    CurrentValue = false,
+    Flag = "ToggleSmoothFly",
+    Callback = function(Value)
+        if Value then
+            FlyConnection = RunService.RenderStepped:Connect(function()
+                local char = LocalPlayer.Character
+                if char then
+                    local root = char:FindFirstChild("HumanoidRootPart")
+                    local humanoid = char:FindFirstChildOfClass("Humanoid")
+                    if root and humanoid then
+                        humanoid.PlatformStand = true
+                        local cam = workspace.CurrentCamera
+                        local moveDir = humanoid.MoveDirection
+                        
+                        if moveDir.Magnitude > 0 then
+                            local camLook = cam.CFrame.LookVector
+                            local camRight = cam.CFrame.RightVector
+                            
+                            local flatLook = Vector3.new(camLook.X, 0, camLook.Unit.Z)
+                            local flatRight = Vector3.new(camRight.X, 0, camRight.Unit.Z)
+                            
+                            local moveVector = (flatLook * moveDir.Z + flatRight * moveDir.X).Unit
+                            if moveVector.Magnitude > 0 then
+                                root.Velocity = moveVector * FlySpeedValue + Vector3.new(0, 0, 0)
+                            else
+                                root.Velocity = Vector3.new(0, 0, 0)
+                            end
+                        else
+                            root.Velocity = Vector3.new(0, 0, 0)
+                        end
+                    end
+                end
+            end)
+            Rayfield:Notify({Title = "飛行開啟", Content = "平滑飛行引擎啟動", Duration = 2})
+        else
+            if FlyConnection then FlyConnection:Disconnect() end
+            local char = LocalPlayer.Character
+            if char then
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if humanoid then humanoid.PlatformStand = false end
+                if root then root.Velocity = Vector3.new(0, 0, 0) end
+            end
+            Rayfield:Notify({Title = "飛行關閉", Content = "已安全降落並恢復重力", Duration = 2})
+        end
+    end,
+})
+
+UtilityTab:CreateSlider({
+    Name = "飛行速度調節",
+    Range = {10, 200},
+    Increment = 5,
+    CurrentValue = 50,
+    Flag = "FlySpeedSlider",
+    Callback = function(Value)
+        FlySpeedValue = Value
+    end,
+})
 
 Rayfield:Notify({
-   Title = "主控台就緒",
-   Content = "已成功對接 ESP 與 Fling 遠端模組！",
-   Duration = 4,
-   Image = 4483362458,
+    Title = "主控台就緒",
+    Content = "已成功將遠端腳本與內置功能拆分至不同分頁！",
+    Duration = 4,
+    Image = 4483362458,
 })
